@@ -115,7 +115,6 @@ static bool LoadMNISTData(const std::string &mnist_label_filename,
 
         ifs.read(reinterpret_cast<char *>(&magic), 4);
 
-        // TODO(LTE): Endian swap
         uint8_t data_type = *(reinterpret_cast<uint8_t *>(&magic) + 2);
         uint8_t dim = *(reinterpret_cast<uint8_t *>(&magic) + 3);
 

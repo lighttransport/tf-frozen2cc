@@ -66,3 +66,10 @@ Initialize network. Setup memories for `Buffer`, decode constant(weight) values,
 # License
 
 MIT License.
+
+## Third party licecnses
+
+* base64-encdec.inc : Copyright (C) 2004-2008 René Nyffenegger. zlib license. https://github.com/ReneNyffenegger/cpp-base64
+* stb_image_write : Public domain.
+ 
+
