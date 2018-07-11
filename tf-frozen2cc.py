@@ -22,6 +22,7 @@
 
 import os, sys
 import json
+import re
 
 from string import Template
 
@@ -68,6 +69,12 @@ def topolocal_sort(input_graph):
     # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## -------------------------------------------------------------
+
+def escape_name(name  # type: str
+    ):
+
+    # replace '/' deliminer with '___'
+    return name.replace('/', '___')
 
 
 def get_dim_and_len(node):
@@ -173,12 +180,16 @@ def Const(node, ctx):
 
     ty = node["attr"]["value"]["tensor"]["dtype"] 
 
-    assert ty == "DT_FLOAT"
+    assert (ty == "DT_FLOAT" or ty == "DT_INT32"), "Unsupported type:" + ty
+
+    if not "tensorContent" in node["attr"]["value"]["tensor"]:
+        # not a weight node
+        return None
 
     data = node["attr"]["value"]["tensor"]["tensorContent"]
     
     s = '''
-static void ConstInit_${name}(std::vector<float> *output) {
+static void ConstInit_${name_escaped}(std::vector<float> *output) {
     std::string tensorContent = "${data}";
     
     std::string decoded = base64_decode(tensorContent);
@@ -199,6 +210,7 @@ static void ConstInit_${name}(std::vector<float> *output) {
 
     d = node
     d["data"] = data
+    d["name_escaped"] = escape_name(node["name"])
     return st.substitute(d)
 
 def Placeholder(op, ctx):
@@ -210,7 +222,7 @@ def Placeholder(op, ctx):
 
     s = '''
 // ${name}
-static void PlaceholderInit_${name}(std::vector<float> *output) {
+static void PlaceholderInit_${name_escaped}(std::vector<float> *output) {
     output->resize(${length});
 }
 
@@ -219,7 +231,23 @@ static void PlaceholderInit_${name}(std::vector<float> *output) {
 
     d = op
     d["length"] = length
+    d["name_escaped"] = escape_name(op["name"])
     return s.substitute(d)
+
+def LRN(op, ctx):
+    """
+    input: 4D tensor(must be float, bfloat16 or float32 type)
+    tf.nn.local response_normalization
+    sqr_sum[a, b, c, d] =
+    sum(input[a, b, c, d - depth_radius : d + depth_radius + 1] ** 2)
+output = input / (bias + alpha * sqr_sum) ** beta
+
+    default:
+        depth_radius = 5
+        bias = 5
+        alpha = 1
+        beta = 0.5
+    """
 
 def NoOp(op, ctx):
     pass
@@ -250,6 +278,17 @@ _CodeGenOpTable = {
   , 'Softmax' : Softmax
 }
 
+def HasWeightInConst(node):
+
+    ty = node["attr"]["value"]["tensor"]["dtype"] 
+
+    assert (ty == "DT_FLOAT" or ty == "DT_INT32"), "Unsupported type:" + ty
+
+    if "tensorContent" in node["attr"]["value"]["tensor"]:
+        return True
+
+    return False
+
 def ConstructArgString(prefix, # type: str
                        node):
     s = ""
@@ -260,7 +299,7 @@ def ConstructArgString(prefix, # type: str
         inputs = node["input"]
     
     for i in range(len(inputs)):
-        s += prefix + inputs[i]
+        s += prefix + escape_name(inputs[i])
         if i != (len(inputs) - 1):
             s += ", "
 
@@ -268,7 +307,7 @@ def ConstructArgString(prefix, # type: str
         s += ", "
 
     # output
-    s += "&(" + prefix + node["name"] + ")"
+    s += "&(" + prefix + escape_name(node["name"]) + ")"
 
     return s
 
@@ -290,7 +329,7 @@ struct Buffer {
         if node["op"] == "NoOp":
             continue
 
-        s = "    std::vector<float> {};\n".format(node["name"])
+        s = "    std::vector<float> {};\n".format(escape_name(node["name"]))
 
         ret += s
 
@@ -325,24 +364,28 @@ void NetworkInit(Buffer *buffer) {
 
         if node["op"] == "Const":
 
-            # Emit initializer function.
-            s = '''
-    ConstInit_$name(${args});
-'''
-            st = Template(s)
-            d = node
-            d["args"] = ConstructArgString("buffer->", node)
+            if HasWeightInConst(node):
 
-            ret += st.substitute(d)
+                # Emit initializer function.
+                s = '''
+        ConstInit_${name_escaped}(${args});
+    '''
+                st = Template(s)
+                d = node
+                d["name_escaped"] = escape_name(node["name"])
+                d["args"] = ConstructArgString("buffer->", node)
+
+                ret += st.substitute(d)
 
         elif node["op"] == "Placeholder":
 
             # Emit initializer function.
             s = '''
-    PlaceholderInit_$name(${args});
+    PlaceholderInit_${name_escaped}(${args});
 '''
             st = Template(s)
             d = node
+            d["name_escaped"] = escape_name(node["name"])
             d["args"] = ConstructArgString("buffer->", node)
 
             ret += st.substitute(d)
