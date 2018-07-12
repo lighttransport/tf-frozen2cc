@@ -142,6 +142,24 @@ def get_dilations(attr):
 
     raise attr
 
+def Abs(op, ctx):
+    assert get_type(op) == "DT_FLOAT"
+
+    s = '''
+// name: ${name}
+static void Abs(std::vector<float> &input, std::vector<float> *output) {
+
+    output->resize(input.size());
+    for (size_t i = 0; i < input.size(); i++) {
+        (*output)[i] = std::abs(input_a[i]); 
+    }
+}
+'''
+
+    s = Template(s)
+    d = op
+    return s.substitute(d)
+
 def Add(op, ctx):
     assert get_type(op) == "DT_FLOAT"
 
@@ -438,9 +456,9 @@ static void Conv2D_NHWC(const std::vector<float> &input, const std::vector<float
 
                 double sum = 0.0;
                 for (int q = 0; q < filter_channels; q++) {
-                    for (int dj = -filter_height/2; dj < filter_height/2; dj++) { // height
+                    for (int dj = -filter_height/2; dj <= filter_height/2; dj++) { // height
                         int fy = std::min(std::max(j + dj, 0), height);
-                        for (int di = -filter_width/2; di < filter_width; di++) { // width
+                        for (int di = -filter_width/2; di <= filter_width; di++) { // width
                             // clamp
                             int fx = std::min(std::max(k + di, 0), width);
 
@@ -528,6 +546,7 @@ class Context:
 
 _CodeGenOpTable = {
     'MatMul' : MatMul
+  , 'Abs' : Add
   , 'Add' : Add
   , 'BiasAdd' : BiasAdd
   , 'Placeholder' : Placeholder
