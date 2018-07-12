@@ -8,9 +8,9 @@ namespace lainnie {
 
 
 struct Buffer {
+    std::vector<float> input;
     std::vector<float> constant_b;
     std::vector<float> constant_W;
-    std::vector<float> input;
     std::vector<float> MatMul;
     std::vector<float> add;
     std::vector<float> output;
@@ -18,8 +18,8 @@ struct Buffer {
 };
 
 
-// Initialize buffer for the network
-void NetworkInit(Buffer *buffer);
+// Prepare buffer for the network
+void NetworkPrepare(Buffer *buffer);
 
 // Execute network(forward pass).
 bool NetworkForwardExecute(Buffer *buffer);

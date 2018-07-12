@@ -187,7 +187,7 @@ int main(int argc, char **argv) {
     }
 
     lainnie::Buffer buffer;
-    lainnie::NetworkInit(&buffer);
+    lainnie::NetworkPrepare(&buffer);
 
     // std::cout << buffer.input.size() << std::endl;
 
