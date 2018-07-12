@@ -115,6 +115,29 @@ static void Add(std::vector<float> &input_a, std::vector<float> &input_b, std::v
     d = op
     return s.substitute(d)
 
+def BiasAdd(op, ctx):
+    """
+    TODO: Consider `data_format`?
+    """
+
+    assert get_type(op) == "DT_FLOAT"
+
+    s = '''
+// name: ${name}
+static void BiasAdd(std::vector<float> &input_a, std::vector<float> &bias, std::vector<float> *output) {
+
+    output->resize(input_a.size());
+    for (size_t i = 0; i < input_a.size(); i++) {
+        (*output)[i] = input_a[i] + bias[i]; 
+    }
+}
+'''
+
+    s = Template(s)
+    d = op
+    return s.substitute(d)
+
+
 def MatMul(op, ctx):
 
     #(dim, length) = get_dim_and_len(op)
@@ -176,6 +199,32 @@ static void Softmax(std::vector<float> &input,  std::vector<float> *output) {
     d = node
     return s.substitute(d)
 
+def Sigmoid(node, ctx):
+
+    assert get_type(node) == "DT_FLOAT"
+
+    # TODO(LTE): Use log for better numerical accuracy.
+
+    s = '''
+static void Sigmoid(std::vector<float> &input,  std::vector<float> *output) {
+
+    output->resize(input.size());
+
+    double sum = 0.0;
+    for (size_t i = 0; i < input.size(); i++) {
+        (*output)[i] = 1.0 / (1.0 + std::exp(input[i]));
+    }
+}
+'''
+    s = Template(s)
+
+    d = node
+    return s.substitute(d)
+
+def Reshape(op, ctx):
+    raise "TODO"
+    pass
+
 def Const(node, ctx):
 
     ty = node["attr"]["value"]["tensor"]["dtype"] 
@@ -234,6 +283,27 @@ static void PlaceholderInit_${name_escaped}(std::vector<float> *output) {
     d["name_escaped"] = escape_name(op["name"])
     return s.substitute(d)
 
+def Relu(node, ctx):
+
+    assert get_type(node) == "DT_FLOAT"
+
+    # TODO(LTE): Use log for better numerical accuracy.
+
+    s = '''
+static void Relu(std::vector<float> &input,  std::vector<float> *output) {
+
+    output->resize(input.size());
+
+    for (size_t i = 0; i < input.size(); i++) {
+        (*output)[i] = std::max(input[i]), 0.0f);
+    }
+}
+'''
+    s = Template(s)
+
+    d = node
+    return s.substitute(d)
+
 def LRN(op, ctx):
     """
     input: 4D tensor(must be float, bfloat16 or float32 type)
@@ -248,6 +318,30 @@ output = input / (bias + alpha * sqr_sum) ** beta
         alpha = 1
         beta = 0.5
     """
+
+def StridedSlice(op, ctx):
+    raise "TODO"
+    pass
+
+def Conv2D(op, ctx):
+    raise "TODO"
+    pass
+
+def Conv2DBackpropInput(op, ctx):
+    raise "TODO"
+    pass
+
+def FusedBatchNorm(op, ctx):
+    raise "TODO"
+    pass
+
+def Pack(op, ctx):
+    raise "TODO"
+    pass
+
+def Shape(op, ctx):
+    raise "TODO"
+    pass
 
 def NoOp(op, ctx):
     pass
@@ -273,9 +367,18 @@ class Context:
 _CodeGenOpTable = {
     'MatMul' : MatMul
   , 'Add' : Add
+  , 'BiasAdd' : BiasAdd
   , 'Placeholder' : Placeholder
   , 'Const' : Const
   , 'Softmax' : Softmax
+  , 'Sigmoid' : Sigmoid
+  , 'StridedSlice' : StridedSlice
+  , 'Conv2D' : Conv2D
+  , 'Conv2DBackpropInput' : Conv2DBackpropInput
+  , 'FusedBatchNorm' : FusedBatchNorm
+  , 'Pack' : Pack
+  , 'Relu' : Relu
+  , 'Shape' : Shape
 }
 
 def HasWeightInConst(node):
@@ -357,6 +460,7 @@ void NetworkInit(Buffer *buffer) {
 
     for layer_name in deque_graph:
         node = ctx.graph[layer_name]
+        print("op", node["op"])
 
         if node["op"] == "NoOp":
             continue
