@@ -71,5 +71,6 @@ MIT License.
 
 * base64-encdec.inc : Copyright (C) 2004-2008 René Nyffenegger. zlib license. https://github.com/ReneNyffenegger/cpp-base64
 * stb_image_write : Public domain.
- 
+* json.hpp(used in unit testing) : Copyright © 2013-2018 Niels Lohmann. MIT license. https://github.com/nlohmann/json
+* Acutest(unit testing library) : Copyright (c) 2013-2017 Martin Mitas. MIT license. http://github.com/mity/acutest
 

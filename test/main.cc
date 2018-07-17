@@ -5,8 +5,13 @@
 
 #include <vector>
 #include <algorithm>
+#include <string>
 
 #include "../ops/conv2d.inc"
+#include "../base64-encdec.inc"
+
+// used for JSON serialization
+#include "nlohmann/json.hpp"
 
 void test_conv2d(void)
 {
