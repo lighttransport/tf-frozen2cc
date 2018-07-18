@@ -7,6 +7,8 @@
 #include <algorithm>
 
 #include "../ops/conv2d.inc"
+#include "../ops/lrn.inc"
+#include "../ops/maxpool.inc"
 
 void test_conv2d(void)
 {
