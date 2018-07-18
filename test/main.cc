@@ -52,6 +52,7 @@ std::string SerializeTensorToJSON(
         nlohmann::json tensor;
         tensor["tensorShape"] = tensorShape;
         tensor["tensorContent"] = b64_str;
+        tensor["dtype"] = "DT_FLOAT";
 
         value["tensor"] = tensor;
 

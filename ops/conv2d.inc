@@ -28,12 +28,22 @@ static void Conv2D_NHWC(const std::vector<float> &input,
             int fy = std::min(std::max(j + dj, 0), int(height));
             for (int di = -filter_width / 2; di <= filter_width;
                  di++) {  // width
+
+              if (((k + di) < 0) || 
+                  ((k + di) >= width) || 
+                  ((j + dj) < 0) || 
+                  ((j + dj) >= height)) {
+                // zero padding.
+                continue;
+              }
+
               // clamp
               int fx = std::min(std::max(k + di, 0), int(width));
 
               size_t src_idx = filter_channels * (fy * width + fx) + q;
               size_t filter_idx =
                   filter_channels * (fy * filter_width + fx) + q;
+
               sum += input[src_idx] * filter[filter_idx];
             }
           }

@@ -1,0 +1,26 @@
+{ "node": [
+	{
+	  "attr": {
+	    "dtype": {
+	      "type": "DT_FLOAT"
+	    },
+	    "value": {
+	      "tensor": {
+	        "dtype": "DT_FLOAT",
+		"tensorContent": "AACAPwAAAEDNzAxAAACAQA==",
+		"tensorShape": {
+		  "dim": [
+		    {
+		      "size": "4"
+		    }
+		  ]
+		}
+	      }
+	    }
+	  },
+	  "name": "const1",
+	  "op": "Const"
+	}
+	]
+}
+
