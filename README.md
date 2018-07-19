@@ -73,4 +73,5 @@ MIT License.
 * stb_image_write : Public domain.
 * json.hpp(used in unit testing) : Copyright © 2013-2018 Niels Lohmann. MIT license. https://github.com/nlohmann/json
 * Acutest(unit testing library) : Copyright (c) 2013-2017 Martin Mitas. MIT license. http://github.com/mity/acutest
+* gemmlowp(experimental) : Apache 2.0 license. https://github.com/google/gemmlowp.git
 
