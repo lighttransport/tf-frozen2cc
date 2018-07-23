@@ -9,17 +9,29 @@
 #include <algorithm>
 #include <string>
 #include <limits>
+#include <random>
 
 #include "../ops/conv2d.inc"
 #include "../ops/lrn.inc"
 #include "../ops/maxpool.inc"
+#include "../ops/matmul.inc"
 
 #include "../base64-encdec.inc"
 
 // used for JSON serialization
 #include "nlohmann/json.hpp"
 
-std::string SerializeTensorToJSON(
+// generate random number in the range [0.0, 1.0).
+static void GenerateRandomUniformFloat(std::default_random_engine &engine, size_t n, std::vector<float> *output)
+{
+  std::uniform_real_distribution<> dist;
+
+  for (size_t i = 0; i < n; i++) {
+    output->push_back(dist(engine));
+  }
+}
+
+static std::string SerializeTensorToJSON(
   const std::string &name,
   const std::vector<float> &data, int shape[4], int shape_dim)
 {
@@ -77,6 +89,20 @@ std::string SerializeTensorToJSON(
 
 }
 
+void test_random(void)
+{
+  std::random_device seed_gen;
+  std::default_random_engine engine(seed_gen());
+
+  std::vector<float> rnd;
+  GenerateRandomUniformFloat(engine, 100, &rnd);
+
+  for (size_t i = 0; i < 100; i++) {
+    std::cout << rnd[i] << std::endl;
+  }
+  
+}
+
 void test_conv2d(void)
 {
   int a = 2;
@@ -97,6 +123,7 @@ void test_serialize(void)
 TEST_LIST = {
     { "conv2d",     test_conv2d },
     { "serialize",  test_serialize },
+    { "random",  test_random },
     { NULL, NULL }
 };
 
