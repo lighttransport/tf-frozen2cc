@@ -21,6 +21,10 @@
 // used for JSON serialization
 #include "nlohmann/json.hpp"
 
+#ifdef USE_GEMMLOWP
+#include "gemmlowp.h"
+#endif
+
 // generate random number in the range [0.0, 1.0).
 static void GenerateRandomUniformFloat(std::default_random_engine &engine, size_t n, std::vector<float> *output)
 {
