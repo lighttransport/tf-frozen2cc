@@ -16,6 +16,9 @@
 #include "../ops/matmul.inc"
 #include "../ops/maxpool.inc"
 #include "../ops/depthwise_conv2d_native.inc"
+#include "../ops/relu6.inc"
+#include "../ops/bias_add.inc"
+#include "../ops/identity.inc"
 
 #include "../base64-encdec.inc"
 
