@@ -80,18 +80,16 @@ static void GenerateRandomUniformFloat(std::default_random_engine &engine,
   }
 }
 
-static std::string SerializeTensorToJSON(const std::string &name,
+static bool SerializeTensorToJSON(const std::string &name,
                                          const std::vector<float> &data,
-                                         int shape[4], int shape_dim) {
-  nlohmann::json j;
-
+                                         int shape[4], int shape_dim, nlohmann::json *j) {
   // to base64
   std::string b64_str =
       base64_encode(reinterpret_cast<unsigned char const *>(data.data()),
                     sizeof(float) * data.size());
 
-  j["name"] = name;
-  j["op"] = "Const";
+  (*j)["name"] = name;
+  (*j)["op"] = "Const";
 
   {
     nlohmann::json attr;
@@ -124,8 +122,17 @@ static std::string SerializeTensorToJSON(const std::string &name,
       attr["dtype"] = dtype;
     }
 
-    j["attr"] = attr;
+    (*j)["attr"] = attr;
   }
+
+  return true;
+}
+
+static std::string SerializeTensorToJSONString(const std::string &name,
+                                         const std::vector<float> &data,
+                                         int shape[4], int shape_dim) {
+  nlohmann::json j;
+  SerializeTensorToJSON(name, data, shape, shape_dim, &j);
 
   {
     std::stringstream ss;
@@ -157,14 +164,51 @@ void test_serialize(void) {
   int shapes[4] = {4, 0, 0, 0};
   int shape_dim = 1;
 
-  std::string s = SerializeTensorToJSON("const1", input, shapes, shape_dim);
+  std::string s = SerializeTensorToJSONString("const1", input, shapes, shape_dim);
 
   std::cout << s << std::endl;
+}
+
+void test_matmul(void) {
+
+  std::vector<float> input_a = {1.0f, 2.0f, 2.2f, 4.0f};
+  std::vector<float> input_b = {2.0f, 3.0f, 4.3f, 5.2f};
+  std::vector<float> result = {2.0f, 3.0f, 4.3f, 5.2f};
+  int shapes[4] = {4, 0, 0, 0};
+  int shape_dim = 1;
+
+  nlohmann::json j_a, j_b;
+  SerializeTensorToJSON("const_a", input_a, shapes, shape_dim, &j_a);
+  SerializeTensorToJSON("const_b", input_b, shapes, shape_dim, &j_b);
+
+  nlohmann::json j_r;
+  SerializeTensorToJSON("reference", result, shapes, shape_dim, &j_r);
+
+  nlohmann::json op;
+
+  op["name"] = "matmul";
+  op["op"] = "MatMul";
+  op["input"] = { "const_a", "const_b" };
+
+  nlohmann::json attr;
+
+  attr["T"] = {{"type", "DT_FLOAT"}};
+  attr["transpose_a"] = {{"b", false}};
+  attr["transpose_b"] = {{"b", false}};
+
+  op["attr"] = attr;
+
+  nlohmann::json node;
+
+  node = {j_a, j_b, op, j_r};
+  
+  std::cout << std::setw(2) << node << std::endl;
 }
 
 TEST_LIST = {{"conv2d", test_conv2d},
              {"serialize", test_serialize},
              {"random", test_random},
+             {"matmul", test_matmul},
              {NULL, NULL}};
 
 #if 0
