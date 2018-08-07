@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 
 #include <algorithm>
@@ -174,8 +175,8 @@ void test_matmul(void) {
   std::vector<float> input_a = {1.0f, 2.0f, 2.2f, 4.0f};
   std::vector<float> input_b = {2.0f, 3.0f, 4.3f, 5.2f};
   std::vector<float> result = {2.0f, 3.0f, 4.3f, 5.2f};
-  int shapes[4] = {4, 0, 0, 0};
-  int shape_dim = 1;
+  int shapes[4] = {1, 4, 0, 0};
+  int shape_dim = 2;
 
   nlohmann::json j_a, j_b;
   SerializeTensorToJSON("const_a", input_a, shapes, shape_dim, &j_a);
@@ -200,9 +201,13 @@ void test_matmul(void) {
 
   nlohmann::json node;
 
-  node = {j_a, j_b, op, j_r};
-  
-  std::cout << std::setw(2) << node << std::endl;
+  node["node"] = {j_a, j_b, op, j_r};
+  node["versions"] = {{"producer", 26}};
+
+  {
+    std::ofstream ofs("op_matmul.json");
+    ofs << std::setw(2) << node << std::endl;
+  }
 }
 
 TEST_LIST = {{"conv2d", test_conv2d},
